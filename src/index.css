@@ -8,7 +8,8 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f0f2f5;
+  background-color: #1a1d24; /* Dark background */
+  color: #e0e0e0; /* Light default text color */
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -16,15 +17,15 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #2a2d34;
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #a8a8a8;
+  background: #555;
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #7a7a7a;
+  background: #777;
 }
