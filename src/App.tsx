@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, PlusCircle, MinusCircle, TrendingUp, Calendar, ChevronDown, ChevronUp, Filter, Settings, Trash2 } from 'lucide-react';
+import { PlusCircle, MinusCircle, BarChart2, Settings, Trash2, Filter, Home, Calendar, TrendingUp } from 'lucide-react';
 
 // TypeScript 인터페이스 정의
 interface Transaction {
@@ -10,19 +10,17 @@ interface Transaction {
   balanceAfter: number;
 }
 
+type ActiveTab = 'home' | 'stats' | 'settings';
+
 const TimeBankApp = () => {
   const [totalTime, setTotalTime] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [withdrawAmount, setWithdrawAmount] = useState<string>('');
   const [currentDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [interestRate, setInterestRate] = useState<number>(10); // 복리 이율 (%)
-  const [expectedDays, setExpectedDays] = useState<string>('0'); // 예상 이자 계산을 위한 일수
-  const [projectedTotalTime, setProjectedTotalTime] = useState<number | null>(null); // 예상 이자 계산 결과 시간
-
-  // 접기/펼치기 상태
-  const [statsExpanded, setStatsExpanded] = useState<boolean>(false);
-  const [historyExpanded, setHistoryExpanded] = useState<boolean>(false);
-  const [settingsExpanded, setSettingsExpanded] = useState<boolean>(false);
+  const [interestRate, setInterestRate] = useState<number>(10);
+  const [expectedDays, setExpectedDays] = useState<string>('0');
+  const [projectedTotalTime, setProjectedTotalTime] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
 
   // 거래 내역 필터
   const [transactionFilter, setTransactionFilter] = useState<string>('전체');
@@ -182,8 +180,6 @@ const TimeBankApp = () => {
     return stats;
   };
 
-  const dailyStats = getDailyStats();
-
   // 거래 내역 필터링
   const getFilteredTransactions = () => {
     let filtered = transactions;
@@ -215,285 +211,253 @@ const TimeBankApp = () => {
     return filtered;
   };
 
-  const filteredTransactions = getFilteredTransactions();
+  const renderHome = () => (
+    <div className="space-y-6">
+      {/* 총 저축 시간 */}
+      <div className="text-center bg-white p-6 rounded-2xl shadow-md">
+        <p className="text-gray-500 text-sm">총 저축 시간</p>
+        <p className="text-4xl font-extrabold mt-2 mb-1 leading-tight tracking-tighter text-gray-800">{formatTime(totalTime)}</p>
+        <p className="text-blue-600 text-xs font-medium">매일 {interestRate}% 복리 적용</p>
+      </div>
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1d24] to-[#121418] text-gray-200 p-4 font-sans antialiased">
-      <div className="max-w-md mx-auto bg-black/30 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/10">
-        {/* 헤더 */}
-        <div className="p-6 text-white">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <Clock className="w-8 h-8 text-cyan-300" />
-              <h1 className="text-2xl font-bold tracking-tight">Time Bank</h1>
-            </div>
-            <Settings
-              className="w-6 h-6 text-gray-400 hover:text-white transition-colors cursor-pointer"
-              onClick={() => setSettingsExpanded(!settingsExpanded)}
-            />
-          </div>
-          <div className="text-center bg-black/20 backdrop-blur-sm p-6 rounded-2xl border border-white/10 shadow-lg">
-            <p className="text-gray-300 text-sm opacity-90">총 저축 시간</p>
-            <p className="text-5xl font-extrabold mt-2 mb-3 leading-tight tracking-tighter text-cyan-300">{formatTime(totalTime)}</p>
-            <p className="text-gray-300 text-xs opacity-80 font-medium">매일 {interestRate}% 복리 적용</p>
+      {/* 시간 저축 및 인출 */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* 시간 저축 */}
+        <div className="bg-white p-4 rounded-2xl shadow-md">
+          <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center">
+            <PlusCircle className="w-5 h-5 mr-2 text-green-500" />
+            시간 저축
+          </h2>
+          <div className="grid grid-cols-3 gap-2">
+            {[10, 30, 60].map(minutes => (
+              <button
+                key={minutes}
+                onClick={() => depositTime(minutes)}
+                className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded-lg text-xs font-bold transition-all duration-200"
+              >
+                {minutes}분
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* 메인 기능 */}
-        <div className="p-4 pt-0 space-y-4">
-          {/* 설정 (토글 형식으로 변경) */}
-          {settingsExpanded && (
-            <div className="bg-black/20 backdrop-blur-md rounded-xl shadow-lg overflow-hidden border border-white/10 p-4 space-y-4">
-              <div className="bg-black/20 p-3 rounded-lg border border-white/10">
-                <label className="block text-sm font-medium text-cyan-300 mb-2">일일 복리 이율 (%)</label>
-                <input
-                  type="number"
-                  value={interestRate}
-                  onChange={handleInterestRateChange}
-                  className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200 text-white"
-                  placeholder="예: 10"
-                />
-              </div>
-              <div className="bg-black/20 p-3 rounded-lg border border-white/10">
-                <label className="block text-sm font-medium text-cyan-300 mb-2">예상 이자 계산 (일)</label>
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    value={expectedDays}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      setExpectedDays(isNaN(value) || value < 0 ? '0' : value.toString());
-                    }}
-                    className="flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200 text-white"
-                    placeholder="예: 30"
-                  />
-                  <button
-                    onClick={() => {
-                      const days = parseInt(expectedDays);
-                      if (!isNaN(days) && days >= 0) {
-                        setProjectedTotalTime(calculateExpectedInterest(totalTime, interestRate, days));
-                      } else {
-                        alert('올바른 일수를 입력해주세요.');
-                      }
-                    }}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-black px-4 py-2 rounded-lg font-bold transition-colors duration-200 ease-in-out shadow-lg hover:shadow-cyan-500/50 transform hover:-translate-y-0.5"
-                  >
-                    계산
-                  </button>
-                </div>
-                {projectedTotalTime !== null && (
-                  <div className="mt-3 p-2 bg-cyan-500/10 rounded-md text-cyan-300 border border-cyan-500/20">
-                    <p>예상 총 시간: <span className="font-semibold">{formatTime(projectedTotalTime)}</span></p>
-                  </div>
-                )}
-              </div>
-              <div className="bg-black/20 p-3 rounded-lg border border-white/10">
-                <label className="block text-sm font-medium text-red-400 mb-2">데이터 관리</label>
-                <button
-                  onClick={handleResetData}
-                  className="w-full flex items-center justify-center px-4 py-2 border border-red-500/50 rounded-lg shadow-sm text-sm font-medium text-white bg-red-600/50 hover:bg-red-600/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500 transition-colors duration-200 ease-in-out"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  모든 데이터 초기화
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 시간 저축 및 인출 */}
-          <div className="bg-black/20 backdrop-blur-md rounded-xl shadow-lg overflow-hidden border border-white/10 p-4">
-            <div className="grid grid-cols-2 gap-4">
-              {/* 시간 저축 */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-200 mb-3 flex items-center">
-                  <PlusCircle className="w-5 h-5 mr-2 text-green-400" />
-                  시간 저축
-                </h2>
-                <div className="grid grid-cols-3 gap-2">
-                  {[10, 30, 60].map(minutes => (
-                    <button
-                      key={minutes}
-                      onClick={() => depositTime(minutes)}
-                      className="bg-green-500/80 hover:bg-green-500 text-black py-3 px-2 rounded-lg text-sm font-bold transition-all duration-200 ease-in-out shadow-lg hover:shadow-green-500/50 transform hover:-translate-y-0.5"
-                    >
-                      {minutes}분
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 시간 인출 */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-200 mb-3 flex items-center">
-                  <MinusCircle className="w-5 h-5 mr-2 text-red-400" />
-                  시간 인출
-                </h2>
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="분"
-                    className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all duration-200 text-white text-center"
-                  />
-                  <button
-                    onClick={withdrawTime}
-                    className="bg-red-500/80 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-bold transition-colors duration-200 ease-in-out shadow-lg hover:shadow-red-500/50 transform hover:-translate-y-0.5"
-                  >
-                    인출
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 날짜별 통계 */}
-          <div className="bg-black/20 backdrop-blur-md rounded-xl shadow-lg overflow-hidden border border-white/10">
+        {/* 시간 인출 */}
+        <div className="bg-white p-4 rounded-2xl shadow-md">
+          <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center">
+            <MinusCircle className="w-5 h-5 mr-2 text-red-500" />
+            시간 인출
+          </h2>
+          <div className="flex space-x-2">
+            <input
+              type="number"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              placeholder="분"
+              className="w-full px-2 py-1 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 text-center"
+            />
             <button
-              onClick={() => setStatsExpanded(!statsExpanded)}
-              className="w-full p-4 flex items-center justify-between hover:bg-white/10 transition-colors duration-200 ease-in-out focus:outline-none"
+              onClick={withdrawTime}
+              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg font-bold transition-colors text-xs"
             >
-              <h2 className="text-lg font-semibold text-gray-200 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-3 text-gray-400" />
-                날짜별 통계
-              </h2>
-              {statsExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+              인출
             </button>
-            {statsExpanded && (
-              <div className="px-4 pb-4">
-                <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar border-t border-white/10 pt-4">
-                  {Object.entries(dailyStats)
-                    .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-                    .slice(0, 10)
-                    .map(([date, stats]) => (
-                    <div key={date} className="bg-black/20 p-3 rounded-lg border border-white/10 shadow-sm">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-300">{date}</span>
-                      </div>
-                      <div className="text-xs text-gray-400 space-y-1">
-                        {stats.deposit > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span>저축:</span>
-                            <span className="font-semibold text-green-400">+{formatTime(stats.deposit)}</span>
-                          </div>
-                        )}
-                        {stats.withdraw > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span>인출:</span>
-                            <span className="font-semibold text-red-400">-{formatTime(stats.withdraw)}</span>
-                          </div>
-                        )}
-                        {stats.compound > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span>복리:</span>
-                            <span className="font-semibold text-cyan-400">+{formatTime(stats.compound)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 거래 내역 */}
-          <div className="bg-black/20 backdrop-blur-md rounded-xl shadow-lg overflow-hidden border border-white/10">
-            <button
-              onClick={() => setHistoryExpanded(!historyExpanded)}
-              className="w-full p-4 flex items-center justify-between hover:bg-white/10 transition-colors duration-200 ease-in-out focus:outline-none"
-            >
-              <h2 className="text-lg font-semibold text-gray-200 flex items-center">
-                <Calendar className="w-5 h-5 mr-3 text-gray-400" />
-                거래 내역 ({filteredTransactions.length}건)
-              </h2>
-              {historyExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-            </button>
-            {historyExpanded && (
-              <div className="px-4 pb-4 space-y-4 border-t border-white/10 pt-4">
-                {/* 필터 옵션 */}
-                <div className="bg-black/20 p-3 rounded-lg border border-white/10 space-y-3">
-                  <div className="flex items-center space-x-2 text-sm font-medium text-gray-300">
-                    <Filter className="w-4 h-4" />
-                    <span>필터 옵션</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      value={transactionFilter}
-                      onChange={(e) => setTransactionFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
-                    >
-                      <option value="전체">전체 유형</option>
-                      <option value="저축">저축</option>
-                      <option value="인출">인출</option>
-                      <option value="복리적용">복리적용</option>
-                    </select>
-                    <select
-                      value={dateRange}
-                      onChange={(e) => setDateRange(e.target.value)}
-                      className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
-                    >
-                      <option value="전체기간">전체 기간</option>
-                      <option value="최근7일">최근 7일</option>
-                      <option value="최근30일">최근 30일</option>
-                      <option value="사용자지정">사용자 지정</option>
-                    </select>
-                  </div>
-                  {dateRange === '사용자지정' && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
-                      />
-                      <input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
-                      />
-                    </div>
-                  )}
-                </div>
-                
-                {/* 거래 내역 리스트 */}
-                <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
-                  {filteredTransactions.length === 0 ? (
-                    <div className="text-center text-gray-500 py-6">
-                      조건에 맞는 거래 내역이 없습니다.
-                    </div>
-                  ) : (
-                    filteredTransactions.map(transaction => (
-                      <div key={transaction.id} className="bg-black/20 p-3 rounded-lg border border-white/10 flex justify-between items-center shadow-sm hover:bg-white/10 transition-colors">
-                        <div>
-                          <div className="flex items-center space-x-3">
-                            <span className={`text-sm font-bold ${
-                              transaction.type === '저축' ? 'text-green-400' : 
-                              transaction.type === '인출' ? 'text-red-400' : 'text-cyan-400'
-                            }`}>
-                              {transaction.type}
-                            </span>
-                            <span className="text-xs text-gray-400">{transaction.date}</span>
-                          </div>
-                          <div className="text-xs text-gray-300 mt-1">
-                            잔액: {formatTime(transaction.balanceAfter)}
-                          </div>
-                        </div>
-                        <div className={`text-base font-bold ${
-                          transaction.type === '저축' || transaction.type === '복리적용' ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          {transaction.type === '저축' || transaction.type === '복리적용' ? '+' : '-'}{formatTime(transaction.amount)}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* 최근 거래 내역 */}
+      <div className="bg-white p-4 rounded-2xl shadow-md">
+        <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center">
+          <Calendar className="w-5 h-5 mr-2 text-gray-500" />
+          최근 거래 내역
+        </h2>
+        <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+          {transactions.slice(0, 5).map(transaction => (
+            <div key={transaction.id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-sm font-bold ${
+                    transaction.type === '저축' ? 'text-green-600' : 
+                    transaction.type === '인출' ? 'text-red-600' : 'text-blue-600'
+                  }`}>
+                    {transaction.type}
+                  </span>
+                  <span className="text-xs text-gray-500">{transaction.date}</span>
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  잔액: {formatTime(transaction.balanceAfter)}
+                </div>
+              </div>
+              <div className={`text-sm font-bold ${
+                transaction.type === '저축' || transaction.type === '복리적용' ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {transaction.type === '저축' || transaction.type === '복리적용' ? '+' : '-'}{formatTime(transaction.amount)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStats = () => (
+    <div className="space-y-6">
+      {/* 날짜별 통계 */}
+      <div className="bg-white p-4 rounded-2xl shadow-md">
+        <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center">
+          <TrendingUp className="w-5 h-5 mr-2 text-gray-500" />
+          날짜별 통계
+        </h2>
+        <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+          {Object.entries(getDailyStats())
+            .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+            .slice(0, 15)
+            .map(([date, stats]) => (
+            <div key={date} className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-sm font-medium text-gray-600 mb-1">{date}</p>
+              <div className="text-xs text-gray-500 space-y-1">
+                {stats.deposit > 0 && <p className="flex justify-between"><span>저축:</span> <span className="font-medium text-green-600">+{formatTime(stats.deposit)}</span></p>}
+                {stats.withdraw > 0 && <p className="flex justify-between"><span>인출:</span> <span className="font-medium text-red-600">-{formatTime(stats.withdraw)}</span></p>}
+                {stats.compound > 0 && <p className="flex justify-between"><span>복리:</span> <span className="font-medium text-blue-600">+{formatTime(stats.compound)}</span></p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 전체 거래 내역 */}
+      <div className="bg-white p-4 rounded-2xl shadow-md">
+        <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center">
+          <Calendar className="w-5 h-5 mr-2 text-gray-500" />
+          전체 거래 내역
+        </h2>
+        {/* 필터 */}
+        <div className="bg-gray-50 p-3 rounded-lg space-y-3 mb-3">
+          <div className="flex items-center space-x-2 text-sm font-medium text-gray-600">
+            <Filter className="w-4 h-4" />
+            <span>필터</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <select value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs">
+              <option value="전체">전체 유형</option>
+              <option value="저축">저축</option>
+              <option value="인출">인출</option>
+              <option value="복리적용">복리</option>
+            </select>
+            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs">
+              <option value="전체기간">전체 기간</option>
+              <option value="최근7일">최근 7일</option>
+              <option value="최근30일">최근 30일</option>
+              <option value="사용자지정">사용자 지정</option>
+            </select>
+          </div>
+          {dateRange === '사용자지정' && (
+            <div className="grid grid-cols-2 gap-2">
+              <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs" />
+              <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs" />
+            </div>
+          )}
+        </div>
+        {/* 리스트 */}
+        <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
+          {getFilteredTransactions().map(transaction => (
+            <div key={transaction.id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
+              <div>
+                <span className={`text-sm font-bold ${
+                  transaction.type === '저축' ? 'text-green-600' : 
+                  transaction.type === '인출' ? 'text-red-600' : 'text-blue-600'
+                }`}>{transaction.type}</span>
+                <span className="text-xs text-gray-500 ml-2">{transaction.date}</span>
+                <p className="text-xs text-gray-600 mt-1">잔액: {formatTime(transaction.balanceAfter)}</p>
+              </div>
+              <p className={`text-sm font-bold ${
+                transaction.type === '저축' || transaction.type === '복리적용' ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {transaction.type === '저축' || transaction.type === '복리적용' ? '+' : '-'}{formatTime(transaction.amount)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <div className="bg-white p-4 rounded-2xl shadow-md">
+        <h2 className="text-base font-semibold text-gray-700 mb-3">일일 복리 이율 (%)</h2>
+        <input
+          type="number"
+          value={interestRate}
+          onChange={handleInterestRateChange}
+          className="w-full p-2 bg-gray-100 border border-gray-300 rounded-lg"
+          placeholder="예: 10"
+        />
+      </div>
+      <div className="bg-white p-4 rounded-2xl shadow-md">
+        <h2 className="text-base font-semibold text-gray-700 mb-3">예상 이자 계산 (일)</h2>
+        <div className="flex space-x-2">
+          <input
+            type="number"
+            value={expectedDays}
+            onChange={(e) => setExpectedDays(e.target.value)}
+            className="w-full p-2 bg-gray-100 border border-gray-300 rounded-lg"
+            placeholder="예: 30"
+          />
+          <button
+            onClick={() => setProjectedTotalTime(calculateExpectedInterest(totalTime, interestRate, parseInt(expectedDays)))}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold"
+          >
+            계산
+          </button>
+        </div>
+        {projectedTotalTime !== null && (
+          <div className="mt-3 p-2 bg-blue-50 rounded-md text-blue-700">
+            예상 총 시간: <span className="font-semibold">{formatTime(projectedTotalTime)}</span>
+          </div>
+        )}
+      </div>
+      <div className="bg-white p-4 rounded-2xl shadow-md">
+        <h2 className="text-base font-semibold text-gray-700 mb-3">데이터 관리</h2>
+        <button
+          onClick={handleResetData}
+          className="w-full flex items-center justify-center p-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          모든 데이터 초기화
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-md mx-auto bg-gray-100 font-sans flex flex-col h-screen">
+      <header className="p-4">
+        <h1 className="text-xl font-bold text-gray-800">Time Bank</h1>
+      </header>
+
+      <main className="flex-grow p-4 overflow-y-auto custom-scrollbar">
+        {activeTab === 'home' && renderHome()}
+        {activeTab === 'stats' && renderStats()}
+        {activeTab === 'settings' && renderSettings()}
+      </main>
+
+      <footer className="bg-white shadow-t">
+        <nav className="flex justify-around">
+          <button onClick={() => setActiveTab('home')} className={`flex-1 p-3 text-center transition-colors ${activeTab === 'home' ? 'text-blue-600' : 'text-gray-500'}`}>
+            <Home className="w-6 h-6 mx-auto" />
+            <span className="text-xs">홈</span>
+          </button>
+          <button onClick={() => setActiveTab('stats')} className={`flex-1 p-3 text-center transition-colors ${activeTab === 'stats' ? 'text-blue-600' : 'text-gray-500'}`}>
+            <BarChart2 className="w-6 h-6 mx-auto" />
+            <span className="text-xs">통계</span>
+          </button>
+          <button onClick={() => setActiveTab('settings')} className={`flex-1 p-3 text-center transition-colors ${activeTab === 'settings' ? 'text-blue-600' : 'text-gray-500'}`}>
+            <Settings className="w-6 h-6 mx-auto" />
+            <span className="text-xs">설정</span>
+          </button>
+        </nav>
+      </footer>
     </div>
   );
 };

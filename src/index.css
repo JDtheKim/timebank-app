@@ -8,24 +8,29 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1a1d24; /* Dark background */
-  color: #e0e0e0; /* Light default text color */
+  background-color: #f3f4f6; /* Light gray background */
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #2a2d34;
+  background: #e5e7eb;
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #555;
+  background: #9ca3af;
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #777;
+  background: #6b7280;
+}
+
+/* Styles for date picker indicator */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.6);
 }
