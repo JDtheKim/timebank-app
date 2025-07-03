@@ -34,3 +34,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     filter: invert(0.6);
 }
+
+.scroll-snap-y {
+  scroll-snap-type: y mandatory;
+}
+
+.scroll-snap-align-start {
+  scroll-snap-align: start;
+}
+
+.scroll-padding-b-20 {
+  scroll-padding-bottom: 5rem; /* Adjust as needed based on footer height */
+}
+
+.touch-action-pan-y {
+  touch-action: pan-y;
+}

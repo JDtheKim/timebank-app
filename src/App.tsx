@@ -10,7 +10,7 @@ interface Transaction {
   balanceAfter: number;
 }
 
-type ActiveTab = 'home' | 'stats' | 'settings';
+type ActiveTab = 'home' | 'transactions' | 'stats' | 'settings';
 
 const TimeBankApp = () => {
   const [totalTime, setTotalTime] = useState<number>(0);
@@ -265,34 +265,61 @@ const TimeBankApp = () => {
         </div>
       </div>
 
-      {/* 최근 거래 내역 */}
+      
+    </div>
+  );
+
+  const renderTransactions = () => (
+    <div className="space-y-6">
       <div className="bg-white p-4 rounded-2xl shadow-md">
         <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center">
           <Calendar className="w-5 h-5 mr-2 text-gray-500" />
-          최근 거래 내역
+          전체 거래 내역
         </h2>
-        <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-          {transactions.slice(0, 5).map(transaction => (
-            <div key={transaction.id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
+        {/* 필터 */}
+        <div className="bg-gray-50 p-3 rounded-lg space-y-3 mb-3">
+          <div className="flex items-center space-x-2 text-sm font-medium text-gray-600">
+            <Filter className="w-4 h-4" />
+            <span>필터</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <select value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-base min-h-[44px]">
+              <option value="전체">전체 유형</option>
+              <option value="저축">저축</option>
+              <option value="인출">인출</option>
+              <option value="복리적용">복리</option>
+            </select>
+            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-base min-h-[44px]">
+              <option value="전체기간">전체 기간</option>
+              <option value="최근7일">최근 7일</option>
+              <option value="최근30일">최근 30일</option>
+              <option value="사용자지정">사용자 지정</option>
+            </select>
+          </div>
+          {dateRange === '사용자지정' && (
+            <div className="grid grid-cols-2 gap-2">
+              <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-base min-h-[44px]" />
+              <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-base min-h-[44px]" />
+            </div>
+          )}
+        </div>
+        {/* 리스트 */}
+        <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar scroll-snap-y mandatory scroll-padding-b-20 touch-action-pan-y">
+          {getFilteredTransactions().map(transaction => (
+            <div key={transaction.id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center scroll-snap-align-start">
               <div>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-sm font-bold ${
-                    transaction.type === '저축' ? 'text-green-600' : 
-                    transaction.type === '인출' ? 'text-red-600' : 'text-blue-600'
-                  }`}>
-                    {transaction.type}
-                  </span>
-                  <span className="text-xs text-gray-500">{transaction.date}</span>
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  잔액: {formatTime(transaction.balanceAfter)}
-                </div>
+                <span className={`text-sm font-bold ${
+                  transaction.type === '저축' ? 'text-green-600' : 
+                  transaction.type === '인출' ? 'text-red-600' : 'text-blue-600'
+                }`}>{transaction.type}</span>
+                <span className="text-xs text-gray-500 ml-2">{transaction.date}</span>
+                <p className="text-xs text-gray-600 mt-1">잔액: {formatTime(transaction.balanceAfter)}</p>
               </div>
-              <div className={`text-sm font-bold ${
+              <p className={`text-sm font-bold ${
                 transaction.type === '저축' || transaction.type === '복리적용' ? 'text-green-600' : 'text-red-600'
               }`}>
                 {transaction.type === '저축' || transaction.type === '복리적용' ? '+' : '-'}{formatTime(transaction.amount)}
-              </div>
+              </p>
             </div>
           ))}
         </div>
@@ -325,60 +352,7 @@ const TimeBankApp = () => {
         </div>
       </div>
 
-      {/* 전체 거래 내역 */}
-      <div className="bg-white p-4 rounded-2xl shadow-md">
-        <h2 className="text-base font-semibold text-gray-700 mb-3 flex items-center">
-          <Calendar className="w-5 h-5 mr-2 text-gray-500" />
-          전체 거래 내역
-        </h2>
-        {/* 필터 */}
-        <div className="bg-gray-50 p-3 rounded-lg space-y-3 mb-3">
-          <div className="flex items-center space-x-2 text-sm font-medium text-gray-600">
-            <Filter className="w-4 h-4" />
-            <span>필터</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <select value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs">
-              <option value="전체">전체 유형</option>
-              <option value="저축">저축</option>
-              <option value="인출">인출</option>
-              <option value="복리적용">복리</option>
-            </select>
-            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs">
-              <option value="전체기간">전체 기간</option>
-              <option value="최근7일">최근 7일</option>
-              <option value="최근30일">최근 30일</option>
-              <option value="사용자지정">사용자 지정</option>
-            </select>
-          </div>
-          {dateRange === '사용자지정' && (
-            <div className="grid grid-cols-2 gap-2">
-              <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs" />
-              <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs" />
-            </div>
-          )}
-        </div>
-        {/* 리스트 */}
-        <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
-          {getFilteredTransactions().map(transaction => (
-            <div key={transaction.id} className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
-              <div>
-                <span className={`text-sm font-bold ${
-                  transaction.type === '저축' ? 'text-green-600' : 
-                  transaction.type === '인출' ? 'text-red-600' : 'text-blue-600'
-                }`}>{transaction.type}</span>
-                <span className="text-xs text-gray-500 ml-2">{transaction.date}</span>
-                <p className="text-xs text-gray-600 mt-1">잔액: {formatTime(transaction.balanceAfter)}</p>
-              </div>
-              <p className={`text-sm font-bold ${
-                transaction.type === '저축' || transaction.type === '복리적용' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {transaction.type === '저축' || transaction.type === '복리적용' ? '+' : '-'}{formatTime(transaction.amount)}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      
     </div>
   );
 
@@ -421,7 +395,7 @@ const TimeBankApp = () => {
         <h2 className="text-base font-semibold text-gray-700 mb-3">데이터 관리</h2>
         <button
           onClick={handleResetData}
-          className="w-full flex items-center justify-center p-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600"
+          className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-base font-medium text-white bg-red-500 hover:bg-red-600 min-h-[44px]"
         >
           <Trash2 className="w-4 h-4 mr-2" />
           모든 데이터 초기화
@@ -431,28 +405,33 @@ const TimeBankApp = () => {
   );
 
   return (
-    <div className="max-w-md mx-auto bg-gray-100 font-sans flex flex-col h-screen">
-      <header className="p-4">
+    <div className="w-full max-w-md mx-auto bg-gray-100 font-sans flex flex-col h-screen">
+      <header className="p-4 pb-0">
         <h1 className="text-xl font-bold text-gray-800">Time Bank</h1>
       </header>
 
-      <main className="flex-grow p-4 overflow-y-auto custom-scrollbar">
+      <main className="flex-grow p-4 pb-28 overflow-y-auto custom-scrollbar">
         {activeTab === 'home' && renderHome()}
+        {activeTab === 'transactions' && renderTransactions()}
         {activeTab === 'stats' && renderStats()}
         {activeTab === 'settings' && renderSettings()}
       </main>
 
-      <footer className="bg-white shadow-t">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white shadow-t border-t border-gray-200 w-full max-w-md mx-auto">
         <nav className="flex justify-around">
-          <button onClick={() => setActiveTab('home')} className={`flex-1 p-3 text-center transition-colors ${activeTab === 'home' ? 'text-blue-600' : 'text-gray-500'}`}>
+          <button onClick={() => setActiveTab('home')} className={`flex-1 py-3 px-1 text-center transition-colors ${activeTab === 'home' ? 'text-blue-600' : 'text-gray-500'}`}>
             <Home className="w-6 h-6 mx-auto" />
             <span className="text-xs">홈</span>
           </button>
-          <button onClick={() => setActiveTab('stats')} className={`flex-1 p-3 text-center transition-colors ${activeTab === 'stats' ? 'text-blue-600' : 'text-gray-500'}`}>
+          <button onClick={() => setActiveTab('transactions')} className={`flex-1 py-3 px-1 text-center transition-colors ${activeTab === 'transactions' ? 'text-blue-600' : 'text-gray-500'}`}>
+            <Calendar className="w-6 h-6 mx-auto" />
+            <span className="text-xs">거래내역</span>
+          </button>
+          <button onClick={() => setActiveTab('stats')} className={`flex-1 py-3 px-1 text-center transition-colors ${activeTab === 'stats' ? 'text-blue-600' : 'text-gray-500'}`}>
             <BarChart2 className="w-6 h-6 mx-auto" />
             <span className="text-xs">통계</span>
           </button>
-          <button onClick={() => setActiveTab('settings')} className={`flex-1 p-3 text-center transition-colors ${activeTab === 'settings' ? 'text-blue-600' : 'text-gray-500'}`}>
+          <button onClick={() => setActiveTab('settings')} className={`flex-1 py-3 px-1 text-center transition-colors ${activeTab === 'settings' ? 'text-blue-600' : 'text-gray-500'}`}>
             <Settings className="w-6 h-6 mx-auto" />
             <span className="text-xs">설정</span>
           </button>
