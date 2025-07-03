@@ -30,6 +30,10 @@ const TimeBankApp = () => {
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
 
+  useEffect(() => {
+    document.title = 'Time Bank';
+  }, []);
+
   // 앱 시작 시 데이터 로드 및 복리 계산
   useEffect(() => {
     const savedData = localStorage.getItem('timeBankData');
